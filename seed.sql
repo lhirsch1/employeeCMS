@@ -41,6 +41,11 @@ VALUES ('Safety Technician', 40000.00, 2), ('Lead Nuclear Engineer', 150000.00,2
 
 INSERT INTO department (dept_name) VALUES ("Human Resources"), ("Engineering"),("Marketing");
 
-select CONCAT(e.first_name, ' ',e.last_name) as Emp_Name, CONCAT(m.first_name,' ', m.last_name) AS manager, r.title, d.dept_name from employee as e inner join emp_role as r on e.role_id = r.id 
-INNER JOIN department AS d on d.id = r.department_id
-LEFT OUTER JOIN employee as m on e.manager_id = m.id
+-- select CONCAT(e.first_name, ' ',e.last_name) as Emp_Name, CONCAT(m.first_name,' ', m.last_name) AS manager, r.title, d.dept_name from employee as e inner join emp_role as r on e.role_id = r.id 
+-- INNER JOIN department AS d on d.id = r.department_id
+-- LEFT OUTER JOIN employee as m on e.manager_id = m.id
+-- order BY d.dept_name
+
+-- INSERT INTO *table name + params* values(*values*);
+
+-- UPDATE *tablename* SET ? WHERE ?
