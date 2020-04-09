@@ -1,13 +1,11 @@
+//declaring dependency
 var connection = require('../connection.js')
 
-console.log("howdy")
+//ORM is a class designed to make database calls easier and reduce the amount of code. 
 class ORM {
     constructor(connection) {
         this.connection = connection;
     }
-
-
-
 
     // select all from table
     selectAll(tableInput) {
@@ -16,6 +14,7 @@ class ORM {
         
     }
 
+    //selects with a where clause
     selectWhere(colToSearch, valOfCol) {
         const queryString = ` SELECT e.id, CONCAT(e.first_name, ' ',e.last_name) as 'Full Name', CONCAT(m.first_name,' ', m.last_name) AS 'Manager', r.title AS 'Job Title', d.dept_name AS 'Department_Name' from employee as e INNER JOIN emp_role as r on e.role_id = r.id INNER JOIN department AS d on d.id = r.department_id LEFT OUTER JOIN employee as m on e.manager_id = m.id  WHERE ?? = ?;`;
         console.log("col ",colToSearch) 
@@ -24,7 +23,7 @@ class ORM {
         return this.connection.query(queryString, [colToSearch, valOfCol])
       }
 
-    //     * //gets manager names for questions
+    //gets manager names for questions
     getManagerNames(){
         const queryString =`SELECT DISTINCT  m.first_name , m.last_name
         FROM employee AS e
@@ -71,7 +70,7 @@ budget(dept){
                             FROM employee as e
                             INNER JOIN emp_role as r ON e.role_id = r.id
                             INNER JOIN department AS d on r.department_id = d.id
-                            WHERE d.dept_name = "${dept}"`
+                            WHERE d.id = "${dept}"`
 
         return this.connection.query(queryString,)
 

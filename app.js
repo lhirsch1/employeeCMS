@@ -4,21 +4,26 @@ const connection = require('./connection')
 //ex ask which table to update
 const ORM = require("./db/data");
 
-let running = 0;
+//arrays are built to populate inquirer choices
 let managerArray = [];
 let employeeArray = [];
 let deptArray = [];
 let roleArray = []
 
+
+//This function gets data to fill arrays in inquirer
 function getEmpData() {
+    //calling ORM method select all with parameter employee
     ORM.selectAll('employee')
         .then(function (res) {
             for (i = 0; i < res.length; i++) {
+                //adding full name to array
                 employeeArray.push(`${res[i].first_name} ${res[i].last_name}`)
             }
         }
         ).catch(err => console.log(err));
-
+    
+    //method gets manager names
     ORM.getManagerNames()
         .then(function (res) {
             for (i = 0; i < res.length; i++) {
@@ -26,7 +31,7 @@ function getEmpData() {
             }
         }
         ).catch(err => console.log(err));
-
+    //method gets departments
     ORM.selectAll('department')
         .then(function (res) {
             for (i = 0; i < res.length; i++) {
@@ -34,8 +39,8 @@ function getEmpData() {
             }
         }
         ).catch(err => console.log(err));
-
-        ORM.selectAll('emp_role')
+    //method gets roles
+    ORM.selectAll('emp_role')
         .then(function (res) {
             for (i = 0; i < res.length; i++) {
                 roleArray.push(`${res[i].title}`)
@@ -43,26 +48,33 @@ function getEmpData() {
         }
         ).catch(err => console.log(err));
 
-
 }
-// function getManagerData(){
-//     ORM.getManagerNames().then(function(res){console.log(res)})
-// }
 
+//main application function
 function cmsApp() {
     //get info for populating questions
     getEmpData();
+
+    //initial prompt gives user many choices. will condense in future i.e. view folder, insert folder
     inquirer.prompt({
         type: 'list',
         message: 'What would you like to do?',
         name: "main",
-        choices: ['View All Employees', 'View All Employees By Department', 'View All Employees By Manager', 'Add Employee', 'Add Role', 'Remove Employee', 'Update Employee Role', 'Update Employee Manager', 'View All Roles', 'View Budget By Department']
+        choices: ['View All Employees', 'View All Roles', 'View All Departments', 'View All Employees By Department', 'View All Employees By Manager', 'Add Employee', 'Add Role', 'Add Department', 'Update Employee Role', 'Update Employee Manager', 'View Budget By Department']
     })
         .then(function (answers) {
 
+            //switch case to handle input
+            //calls appropriate function
             switch (answers.main) {
                 case 'View All Employees':
                     viewAllEmps();
+                    break;
+                case 'View All Roles':
+                    viewRoles();
+                    break;
+                case 'View All Departments':
+                    viewDepts();
                     break;
                 case 'View All Employees By Department':
                     viewEmpsByDepartment();
@@ -83,15 +95,6 @@ function cmsApp() {
                     insertIntoDepartment();
                     break;
 
-                case 'Remove Employee':
-                    removeEmployee();
-                    break;
-                case 'Remove Role':
-                    removeRole();
-                    break;
-                case 'Remove Department':
-                    removeDept();
-                    break;
                 case 'Update Employee Manager':
                     updateManager();
                     break;
@@ -99,20 +102,8 @@ function cmsApp() {
                     updateEmpRole();
                     break;
 
-                case 'Update Employee Manager':
-                    updateEmpManager();
-                    break;
-
-                case 'View All Roles':
-                    viewRoles();
-
-
-                    break;
-
                 case 'View Budget By Department':
-                    ORM.budget('Engineering')
-                        .then(results => console.table(results))
-                        .catch(err => console.log(err));
+                    viewBudget();
 
                     break;
 
@@ -130,8 +121,7 @@ function cmsApp() {
 }
 
 
-cmsApp();
-
+//function calls ORM and returns full list of employees
 function viewAllEmps() {
     ORM.selectAll('employee')
         .then(function (results, err) {
@@ -139,9 +129,10 @@ function viewAllEmps() {
             console.table(results);
             console.log('\n');
             cmsApp();
-        })
+        }).catch(err => console.log(err))
 }
 
+//calls ORM method to get roles
 function viewRoles() {
     ORM.selectAll('emp_role')
         .then(function (results, err) {
@@ -152,7 +143,7 @@ function viewRoles() {
 
         })
 }
-
+//calls ORM to get depts
 function viewDepts() {
     ORM.selectAll('department')
         .then(function (results, err) {
@@ -164,18 +155,21 @@ function viewDepts() {
         })
 }
 
-function viewEmpsByDepartment(dept) {
-
+//function returns list of employees by dept
+function viewEmpsByDepartment() {
+    //prompt user for dept name
     inquirer.prompt([
         {
             type: "rawlist",
             message: "Choose a department",
             name: "dept_name",
+            //use dept array to create choices
             choices: deptArray
         }
     ]).then(function (res) {
+        //gets ID of dept by finding index and adding 1
         dept = (deptArray.indexOf(res.dept_name) + 1)
-
+        //query string
         connection.query(
             `SELECT CONCAT(e.first_name, ' ', e.last_name) AS 'full_name', r.title, d.dept_name FROM employee AS e INNER JOIN emp_role AS r ON e.role_id = r.id INNER JOIN department AS d ON r.department_id = d.id WHERE d.id = ?`, dept
         ).then(results => console.table(results))
@@ -183,8 +177,8 @@ function viewEmpsByDepartment(dept) {
 
 }
 
+//same logic as viewEmpsbyDept, but for managers
 function viewEmpsbyManager() {
-
     inquirer.prompt([
         {
             type: 'rawlist',
@@ -212,8 +206,10 @@ function viewEmpsbyManager() {
     })
 }
 
+//insert function adds new employee
 function insertIntoEmp() {
     inquirer
+    //prompt user for info
         .prompt(
             [
                 {
@@ -239,6 +235,7 @@ function insertIntoEmp() {
             ]
         ).then(function (res) {
             // console.log(res);
+            //sql query to add new employee
             connection.query(
                 'INSERT INTO employee SET ?', res,
                 function (err, res) {
@@ -254,6 +251,7 @@ function insertIntoEmp() {
 
 }
 
+//same logic as insertIntoEmp
 function insertIntoRole() {
     inquirer
         .prompt(
@@ -292,6 +290,7 @@ function insertIntoRole() {
 
 }
 
+//same logic as other inserts
 function insertIntoDept() {
     inquirer
         .prompt(
@@ -304,7 +303,7 @@ function insertIntoDept() {
             ]
         ).then(function (res) {
             //gets the index of department and adds one to match id in table
-            
+
             connection.query(
                 'INSERT INTO emp_role SET ?', res,
                 function (err, res) {
@@ -316,8 +315,8 @@ function insertIntoDept() {
         })
 
 }
-
-function updateEmpRole(){
+//function updates employee role
+function updateEmpRole() {
     inquirer.prompt([{
         type: "rawlist",
         message: "Select an employee to change role",
@@ -330,18 +329,72 @@ function updateEmpRole(){
         name: "newRole",
         choices: roleArray
     }
-]).then(function(res,err){
-    if(err) throw err;
-    let empID = (employeeArray.indexOf(res.empName) + 1)
-    let roleID = (roleArray.indexOf(res.newRole) + 1)
-    connection.query(
-        `UPDATE employee SET role_id = ${roleID} WHERE id = ${empID} `,
-        function (err, res) {
-            if (err) throw err;
-            console.log(res.affectedRows, ' 1 row affected \n')
-            cmsApp()
-        }
-    )
-
-})
+    ]).then(function (res, err) {
+        if (err) throw err;
+        let empID = (employeeArray.indexOf(res.empName) + 1)
+        let roleID = (roleArray.indexOf(res.newRole) + 1)
+        connection.query(
+            `UPDATE employee SET role_id = ${roleID} WHERE id = ${empID} `,
+            function (err, res) {
+                if (err) throw err;
+                console.log(res.affectedRows, ' 1 row affected \n')
+                cmsApp()
+            }
+        )
+    })
 }
+
+//function updates manager
+function updateManager() {
+    inquirer.prompt([{
+        type: "rawlist",
+        message: "Select an employee to change role",
+        name: "empName",
+        choices: employeeArray
+    },
+    {
+        type: "rawlist",
+        message: "Select a new manager",
+        name: "newManager",
+        choices: managerArray
+    }
+    ]).then(function (res, err) {
+        if (err) throw err;
+        //get the emp id and manager id from sql table by adjusting array index
+        let empID = (employeeArray.indexOf(res.empName) + 1)
+        let managerID = (managerArray.indexOf(res.newManager) + 1)
+        connection.query(
+            `UPDATE employee SET manager_id = ${managerID} WHERE id = ${empID} `,
+            function (err, res) {
+                if (err) throw err;
+                console.log(res.affectedRows, ' 1 row affected \n')
+                cmsApp()
+            }
+        )
+    })
+}
+
+//function to calculate budget by department
+function viewBudget() {
+
+    inquirer.prompt([{
+        type: "rawlist",
+        message: "Select a department",
+        name: "dept",
+        choices: deptArray
+    }]).then(function (res) {
+        deptID = (deptArray.indexOf(res.dept) + 1);
+        //calls ORM
+        ORM.budget(deptID)
+            .then(function (results, err) {
+                if (err) throw err;
+                console.table(results);
+                console.log('\n');
+                cmsApp();
+            })
+    }).catch(err => console.log(err))
+
+
+}
+
+cmsApp();
