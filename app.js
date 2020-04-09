@@ -330,7 +330,7 @@ function updateEmpRole(){
         name: "newRole",
         choices: roleArray
     }
-]).then(function(res,error){
+]).then(function(res,err){
     if(err) throw err;
     let empID = (employeeArray.indexOf(res.empName) + 1)
     let roleID = (roleArray.indexOf(res.newRole) + 1)
